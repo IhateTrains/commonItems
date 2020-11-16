@@ -113,8 +113,8 @@ void commonItems::parser::parseFile(const std::string& filename)
 
 void commonItems::parser::clearRegisteredKeywords() noexcept
 {
-	std::vector<std::map<std::string, parsingFunction*>>().swap(registeredKeywordStrings);
-	std::vector<std::vector<std::pair<std::regex, parsingFunction*>>>().swap(generatedRegexes);
+	std::vector<std::map<std::string, parsingFunction>>().swap(registeredKeywordStrings);
+	std::vector<std::vector<std::pair<std::regex, parsingFunction>>>().swap(generatedRegexes);
 	level = 0;
 }
 
@@ -140,7 +140,7 @@ std::optional<std::string> commonItems::parser::getNextToken(std::istream& theSt
 			 match != registeredKeywordStrings[level].end())
 		{
 			levelUp();
-			(*match).second(toReturn, theStream);
+			match->second(toReturn, theStream);
 			levelDown();
 			matched = true;
 			--level;

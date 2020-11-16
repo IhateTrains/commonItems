@@ -61,10 +61,10 @@ class parser
 	}
 	
 	// initialize the vectors with size of 1
-	std::vector<std::map<std::string, parsingFunction*>> registeredKeywordStrings = {
-		 std::map<std::string, parsingFunction*>()};
-	std::vector<std::vector<std::pair<std::regex, parsingFunction*>>> generatedRegexes = {
-		 std::vector<std::pair<std::regex, parsingFunction*>>()};
+	std::vector<std::map<std::string, parsingFunction>> registeredKeywordStrings = {
+		 std::map<std::string, parsingFunction>()};
+	std::vector<std::vector<std::pair<std::regex, parsingFunction>>> generatedRegexes = {
+		 std::vector<std::pair<std::regex, parsingFunction>>()};
 	
 	unsigned int level = 0;
 };
