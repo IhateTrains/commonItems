@@ -8,6 +8,7 @@
 #include <optional>
 #include <regex>
 
+#include "Log.h"
 
 
 namespace commonItems
@@ -41,8 +42,31 @@ class parser
 
 
   private:
-	std::map<std::string, parsingFunction> registeredKeywordStrings;
-	std::vector<std::pair<std::regex, parsingFunction>> generatedRegexes;
+	void levelUp()
+	{
+		++level;
+		registeredKeywordStrings.emplace_back();
+		generatedRegexes.emplace_back();
+
+		Log(LogLevel::Debug) << "vector size is " << registeredKeywordStrings.size();
+		Log(LogLevel::Debug) << "up to " << level;
+	}
+	void levelDown()
+	{
+		registeredKeywordStrings.pop_back();
+		generatedRegexes.pop_back();
+		--level;
+		Log(LogLevel::Debug) << "vector size is " << registeredKeywordStrings.size();
+		Log(LogLevel::Debug) << "down to " << level;
+	}
+	
+	// initialize the vectors with size of 1
+	std::vector<std::map<std::string, parsingFunction*>> registeredKeywordStrings = {
+		 std::map<std::string, parsingFunction*>()};
+	std::vector<std::vector<std::pair<std::regex, parsingFunction*>>> generatedRegexes = {
+		 std::vector<std::pair<std::regex, parsingFunction*>>()};
+	
+	unsigned int level = 0;
 };
 
 } // namespace commonItems

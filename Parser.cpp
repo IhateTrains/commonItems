@@ -27,13 +27,17 @@ void commonItems::absorbBOM(std::istream& theStream)
 
 void commonItems::parser::registerKeyword(const std::string& keyword, const parsingFunction& function)
 {
-	registeredKeywordStrings.insert(std::make_pair(keyword, function));
+	Log(LogLevel::Debug) << "registering " << keyword << " at level " << level << " of size "
+								<< registeredKeywordStrings[level].size();
+	registeredKeywordStrings[level].emplace(keyword, function);
 }
 
 
 void commonItems::parser::registerRegex(const std::string& keyword, const parsingFunction& function)
 {
-	generatedRegexes.emplace_back(std::make_pair(std::regex(keyword), function));
+	Log(LogLevel::Debug) << "registering " << keyword << " at level " << level << " of size "
+								<< registeredKeywordStrings[level].size();
+	generatedRegexes[level].emplace_back(std::regex(keyword), function);
 }
 
 
@@ -89,7 +93,6 @@ void commonItems::parser::parseStream(std::istream& theStream)
 		else
 			break;
 	}
-	std::vector<std::pair<std::regex, parsingFunction>>().swap(generatedRegexes);
 }
 
 
@@ -110,8 +113,9 @@ void commonItems::parser::parseFile(const std::string& filename)
 
 void commonItems::parser::clearRegisteredKeywords() noexcept
 {
-	std::map<std::string, parsingFunction>().swap(registeredKeywordStrings);
-	std::vector<std::pair<std::regex, parsingFunction>>().swap(generatedRegexes);
+	std::vector<std::map<std::string, parsingFunction*>>().swap(registeredKeywordStrings);
+	std::vector<std::vector<std::pair<std::regex, parsingFunction*>>>().swap(generatedRegexes);
+	level = 0;
 }
 
 
@@ -129,44 +133,54 @@ std::optional<std::string> commonItems::parser::getNextToken(std::istream& theSt
 		toReturn = getNextLexeme(theStream);
 
 		const auto strippedLexeme = remQuotes(toReturn);
-		const bool isLexemeQuoted = (strippedLexeme.size() < toReturn.size());
+		const auto isLexemeQuoted = (strippedLexeme.size() < toReturn.size());
 
 		auto matched = false;
-		if (const auto& match = registeredKeywordStrings.find(toReturn); match != registeredKeywordStrings.end())
+		if (const auto& match = registeredKeywordStrings[level].find(toReturn);
+			 match != registeredKeywordStrings[level].end())
 		{
-			match->second(toReturn, theStream);
+			levelUp();
+			(*match).second(toReturn, theStream);
+			levelDown();
 			matched = true;
+			--level;
 		}
 		else if (isLexemeQuoted)
 		{
-			if (const auto& strippedMatch = registeredKeywordStrings.find(strippedLexeme);
-				 strippedMatch != registeredKeywordStrings.end())
+			if (const auto& strippedMatch = registeredKeywordStrings[level].find(strippedLexeme);
+				 strippedMatch != registeredKeywordStrings[level].end())
 			{
+				levelUp();
 				strippedMatch->second(toReturn, theStream);
+				levelDown();
 				matched = true;
 			}
 		}
 
 		if (!matched)
 		{
-			for (const auto& [regex, parsingFunction]: generatedRegexes)
+			for (const auto& [regex, parsingFunction]: generatedRegexes[level])
 			{
 				std::smatch match;
 				if (std::regex_match(toReturn, match, regex))
 				{
+					levelUp();
 					parsingFunction(toReturn, theStream);
+					levelDown();
 					matched = true;
 					break;
 				}
 			}
 			if (!matched && isLexemeQuoted)
 			{
-				for (const auto& [regex, parsingFunction]: generatedRegexes)
+				for (const auto& [regex, parsingFunction]: generatedRegexes[level])
 				{
 					std::smatch match;
 					if (std::regex_match(strippedLexeme, match, regex))
 					{
+						levelUp();
 						parsingFunction(toReturn, theStream);
+						levelDown();
 						matched = true;
 						break;
 					}

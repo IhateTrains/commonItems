@@ -873,3 +873,41 @@ TEST(ParserHelper_Tests, BlobListIsNotAtFaultYouAreOnComplexWrongUsage)
 	const auto expectedBlobs = std::vector<std::string>{" key3 = value2 "};
 	ASSERT_EQ(expectedBlobs, theBlobs.getBlobs());
 }
+
+TEST(ParserHelper_Tests, multiLevelWorks)
+{
+
+	
+	class WrapperClass: commonItems::parser
+	{
+	  public:
+		bool test = false;
+		explicit WrapperClass(std::istream& theStream)
+		{
+			registerRegex("[a-z]", [this](const std::string& thekey, std::istream& theStream) {
+				registerKeyword("test", [this](const std::string& unused, std::istream& theStream) {
+					const commonItems::singleString testStr(theStream);
+					test = testStr.getString() == "yes";
+				});
+				parseStream(theStream);
+				themap[thekey] = test;
+			});
+			parseStream(theStream);
+		}
+		std::map<std::string, bool> themap;
+	};
+
+	std::stringstream input;
+	input >> std::noskipws;
+	input << "a = { test = yes }\n";
+	input << "b = { test = yes }\n";
+	input << "c = { test = no }";
+	input << "d = { test = yes }";
+
+	auto wrapper = WrapperClass(input);
+
+	ASSERT_TRUE(wrapper.themap["a"]);
+	ASSERT_TRUE(wrapper.themap["b"]);
+	ASSERT_FALSE(wrapper.themap["c"]);
+	ASSERT_TRUE(wrapper.themap["d"]);
+}
