@@ -21,6 +21,9 @@ static inline const char* quotedFloatRegex = R"(\"-?\d+(.\d+)?\")";
 static inline const char* stringRegex = R"([^[:s:]^=^\{^\}^\"]+)";
 static inline const char* quotedStringRegex = R"(\"[^\n^=^\{^\}^\"]+\")";
 
+// dates
+static inline const char* dateRegex = R"(\d+.\d+.\d+)";
+
 } // namespace commonItems
 
 
